@@ -2,6 +2,7 @@
 #设置测试运行的环境变量并运行程序
 
 export RABBITMQ_SERVER=amqp://test:test@localhost:5672
+export ES_SERVER=localhost:9200
 
 LISTEN_ADDRESS=10.29.1.1:12345 STORAGE_ROOT=/home/tsy/tmp/1 go run $1/data-server/dataServer.go &
 LISTEN_ADDRESS=10.29.1.2:12345 STORAGE_ROOT=/home/tsy/tmp/2 go run $1/data-server/dataServer.go &
