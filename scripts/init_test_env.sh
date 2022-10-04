@@ -4,6 +4,7 @@
 for i in `seq 1 6`
 do
     mkdir -p /home/tsy/tmp/$i/objects
+    mkdir -p /home/tsy/tmp/$i/temp
 done
 
 # eth0 是此linux系统的网络接口名，使用ifconfig查看

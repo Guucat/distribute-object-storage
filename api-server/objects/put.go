@@ -2,6 +2,7 @@ package objects
 
 import (
 	"distribute-object-system/api-server/heartbeat"
+	"distribute-object-system/api-server/locate"
 	"distribute-object-system/common/es"
 	"distribute-object-system/common/objectstream"
 	"distribute-object-system/common/utils"
@@ -20,8 +21,10 @@ func put(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// 存储时以对象hash值为文件名
-	c, e := storeObject(r.Body, url.PathEscape(hash))
+
+	// 调用dataServer临时存储服务
+	size := utils.GetSizeFromHeader(r.Header)
+	c, e := storeObject(r.Body, hash, size)
 	if e != nil {
 		log.Println(e)
 		w.WriteHeader(c)
@@ -31,34 +34,43 @@ func put(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(c)
 		return
 	}
-	// 存入es
+
+	// 版本信息存入es
 	name := strings.Split(r.URL.EscapedPath(), "/")[2]
-	size := utils.GetSizeFromHeader(r.Header)
 	e = es.AddVersion(name, hash, size)
 	if e != nil {
 		log.Println(e)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
 }
 
-func storeObject(r io.Reader, object string) (int, error) {
-	stream, e := putStream(object)
+func storeObject(r io.Reader, hash string, size int64) (int, error) {
+	// 判断数据是否已经存储过
+	if locate.Exist(url.PathEscape(hash)) {
+		return http.StatusOK, nil
+	}
+
+	stream, e := putStream(url.PathEscape(hash), size)
 	if e != nil {
 		return http.StatusServiceUnavailable, e
 	}
-	io.Copy(stream, r)
-	e = stream.Close()
-	if e != nil {
-		return http.StatusInternalServerError, e
+
+	//io.Copy(stream, r)
+	//e = stream.Close()
+	reader := io.TeeReader(r, stream)
+	d := utils.CalculateHash(reader)
+	if d != hash {
+		stream.Commit(false)
+		return http.StatusBadRequest, fmt.Errorf("objects hash missmatch, calculate=%s, requested=%s", d, hash)
 	}
+	stream.Commit(true)
 	return http.StatusOK, nil
 }
 
-func putStream(object string) (*objectstream.PutStream, error) {
+func putStream(hash string, size int64) (*objectstream.TempPutStream, error) {
 	server := heartbeat.ChooseRandomDataServer()
 	if server == "" {
 		return nil, fmt.Errorf("cannot find any dataServer")
 	}
-	return objectstream.NewPutStream(server, object), nil
+	return objectstream.NewTempPutStream(server, hash, size)
 }
