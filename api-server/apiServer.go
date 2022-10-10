@@ -7,10 +7,13 @@ import (
 	"distribute-object-system/api-server/versions"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 )
 
 func main() {
+	// 性能分析
+
 	go heartbeat.ListenHeartBeat()
 	http.HandleFunc("/objects/", objects.Handler)
 	http.HandleFunc("/locate/", locate.Handler)

@@ -1,10 +1,13 @@
 package temp
 
 import (
+	"distribute-object-system/common/utils"
 	"distribute-object-system/data-server/locate"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -43,6 +46,20 @@ func put(w http.ResponseWriter, r *http.Request) {
 }
 
 func commitTempObject(datFile string, temp *tempInfo) {
-	os.Rename(datFile, os.Getenv("STORAGE_ROOT")+"/objects/"+temp.Name)
-	locate.Add(temp.Name)
+	f, _ := os.Open(datFile)
+	shardHash := url.PathEscape(utils.CalculateHash(f))
+	f.Close()
+	os.Rename(datFile, os.Getenv("STORAGE_ROOT")+"/objects/"+temp.Name+"."+shardHash)
+	locate.Add(temp.hash(), temp.id())
+}
+
+func (t *tempInfo) hash() string {
+	s := strings.Split(t.Name, ".")
+	return s[0]
+}
+
+func (t *tempInfo) id() int {
+	s := strings.Split(t.Name, ".")
+	id, _ := strconv.Atoi(s[1])
+	return id
 }

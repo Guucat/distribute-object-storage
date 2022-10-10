@@ -4,7 +4,7 @@ import (
 	"distribute-object-system/api-server/heartbeat"
 	"distribute-object-system/api-server/locate"
 	"distribute-object-system/common/es"
-	"distribute-object-system/common/objectstream"
+	"distribute-object-system/common/rs"
 	"distribute-object-system/common/utils"
 	"fmt"
 	"io"
@@ -67,10 +67,12 @@ func storeObject(r io.Reader, hash string, size int64) (int, error) {
 	return http.StatusOK, nil
 }
 
-func putStream(hash string, size int64) (*objectstream.TempPutStream, error) {
-	server := heartbeat.ChooseRandomDataServer()
-	if server == "" {
-		return nil, fmt.Errorf("cannot find any dataServer")
+func putStream(hash string, size int64) (*rs.PutStream, error) {
+	servers := heartbeat.ChooseRandomDataServers(rs.AllShards, nil)
+	if len(servers) != rs.AllShards {
+		return nil, fmt.Errorf("cannot find enough dataServer")
 	}
-	return objectstream.NewTempPutStream(server, hash, size)
+	return rs.NewPutStream(servers, hash, size)
+
+	//return objectstream.NewTempPutStream(server, hash, size)
 }

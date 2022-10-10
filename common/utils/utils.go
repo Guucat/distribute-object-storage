@@ -41,6 +41,7 @@ func GetSizeFromHeader(h http.Header) int64 {
 
 func CalculateHash(r io.Reader) string {
 	h := sha256.New()
+	// 可以扩大缓冲区 1024 * 1024 * 10    10M
 	io.Copy(h, r)
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

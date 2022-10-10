@@ -56,12 +56,29 @@ func GetDataServer() []string {
 	return ds
 }
 
-// ChooseRandomDataServer 随机返回一个未过期的数据服务节点的监听地址(ip + port)
-func ChooseRandomDataServer() string {
-	ds := GetDataServer()
-	n := len(ds)
-	if n == 0 {
-		return ""
+// ChooseRandomDataServers n为需要的随机数据节点数， exclude为返回的数据节点中需要排除的数据节点(即目前已存有数据分片的节点)
+//随机返回n个个未过期的数据服务节点的监听地址(ip + port)
+func ChooseRandomDataServers(n int, exclude map[int]string) (servers []string) {
+	candidates := make([]string, 0)
+	// 将键值转换，以地址为键，方便操作
+	addrMap := make(map[string]int)
+	for id, addr := range exclude {
+		addrMap[addr] = id
 	}
-	return ds[rand.Intn(n)]
+	liveServers := GetDataServer()
+	for _, s := range liveServers {
+		_, excluded := addrMap[s]
+		if !excluded {
+			candidates = append(candidates, s)
+		}
+	}
+	length := len(candidates)
+	if length < n {
+		return servers
+	}
+	p := rand.Perm(length)
+	for i := 0; i < n; i++ {
+		servers = append(servers, candidates[p[i]])
+	}
+	return servers
 }

@@ -2,26 +2,31 @@ package locate
 
 import (
 	"distribute-object-system/common/rabbitmq"
+	"distribute-object-system/common/types"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 )
 
 var objects = make(map[string]int)
 var mu sync.Mutex
 
-func Locate(hash string) bool {
+func Locate(hash string) int {
 	mu.Lock()
 	defer mu.Unlock()
-	_, ok := objects[hash]
-	return ok
+	id, ok := objects[hash]
+	if !ok {
+		id = -1
+	}
+	return id
 }
 
-func Add(hash string) {
+func Add(hash string, id int) {
 	mu.Lock()
 	defer mu.Unlock()
-	objects[hash] = 1
+	objects[hash] = id
 }
 
 func Del(hash string) {
@@ -40,9 +45,9 @@ func StartLocate() {
 		if e != nil {
 			panic(e)
 		}
-		exist := Locate(hash)
-		if exist {
-			q.Send(msg.ReplyTo, os.Getenv("LISTEN_ADDRESS"))
+		id := Locate(hash)
+		if id != -1 {
+			q.Send(msg.ReplyTo, types.LocateInfo{Addr: os.Getenv("LISTEN_ADDRESS"), Id: id})
 		}
 	}
 }
@@ -50,8 +55,18 @@ func StartLocate() {
 // CollectObjects 缓存预热，将以存储的文件名加入缓存
 func CollectObjects() {
 	files, _ := filepath.Glob(os.Getenv("STORAGE_ROOT") + "/objects/*")
-	for _, file := range files {
-		hash := filepath.Base(file)
-		objects[hash] = 1
+	for _, path := range files {
+		file := strings.Split(filepath.Base(path), ".")
+		if len(file) != 3 {
+			panic(path)
+		}
+		hash := file[0]
+		id, e := strconv.Atoi(file[1])
+		if e != nil {
+			panic(e)
+		}
+		objects[hash] = id
+		//hash := filepath.Base(file)
+		//objects[hash] = 1
 	}
 }
