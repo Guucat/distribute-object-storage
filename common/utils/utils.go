@@ -39,6 +39,7 @@ func GetSizeFromHeader(h http.Header) int64 {
 	return size
 }
 
+// CalculateHash 计算输入流数据的哈希值，返回经过base64算法编码后的字符串
 func CalculateHash(r io.Reader) string {
 	h := sha256.New()
 	// 可以扩大缓冲区 1024 * 1024 * 10    10M

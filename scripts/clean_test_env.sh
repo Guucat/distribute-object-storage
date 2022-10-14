@@ -3,5 +3,5 @@
 for i in `seq 1 6`
 do
     rm -rf /home/tsy/tmp/$i/objects/*
-    rm -rf /tmp/$i/temp/*
+    rm -rf /home/tsy/tmp/$i/temp/*
 done

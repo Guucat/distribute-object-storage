@@ -57,8 +57,22 @@ func (s *GetStream) Close() {
 	}
 }
 
-//func (s *GetStream) Seek(offset int64, whence int) (int64, error) {
-//	if whence != io.SeekCurrent {
-//		panic("")
-//	}
-//}
+// Seek 从指定偏移offset处返回数据流
+func (s *GetStream) Seek(offset int64, whence int) (int64, error) {
+	if whence != io.SeekCurrent {
+		panic("only support SeekCurrent")
+	}
+	if offset < 0 {
+		panic("only support SeekCurrent")
+	}
+	for offset != 0 {
+		length := int64(BlockSize)
+		if offset < length {
+			length = offset
+		}
+		buf := make([]byte, length)
+		io.ReadFull(s, buf)
+		offset -= length
+	}
+	return offset, nil
+}

@@ -16,5 +16,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		del(w, r)
 		return
 	}
+	// 处理断点上传
+	if m == http.MethodPost {
+		post(w, r)
+		return
+	}
+
 	w.WriteHeader(http.StatusMethodNotAllowed)
 }

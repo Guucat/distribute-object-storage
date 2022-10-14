@@ -5,6 +5,7 @@ import (
 	"distribute-object-system/api-server/locate"
 	"distribute-object-system/common/es"
 	"distribute-object-system/common/rs"
+	"distribute-object-system/common/utils"
 	"fmt"
 	"io"
 	"log"
@@ -44,14 +45,14 @@ func get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
-	_, err := io.Copy(w, stream)
-	if err != nil {
-		log.Println(e)
-		w.WriteHeader(http.StatusNotFound)
-		return
+	// 获取断点下载的偏移offset
+	offset := utils.GetOffsetFromHeader(r.Header)
+	if offset != 0 {
+		stream.Seek(offset, io.SeekCurrent)
+		w.Header().Set("content-range", fmt.Sprintf("bytes %d-%d/%d", offset, meta.Size-1, meta.Size))
+		w.WriteHeader(http.StatusPartialContent)
 	}
-
+	io.Copy(w, stream)
 	stream.Close()
 }
 

@@ -23,7 +23,7 @@ func newGetStream(url string) (*GetStream, error) {
 
 // NewGetStream 若无法成功读取数据流，返回nil
 func NewGetStream(server, object string) (*GetStream, error) {
-	if server == "" && object == "" {
+	if server == "" || object == "" {
 		return nil, fmt.Errorf("invalid servers %s object %s", server, object)
 	}
 	return newGetStream("http://" + server + "/objects/" + object)

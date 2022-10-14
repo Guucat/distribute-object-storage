@@ -1,6 +1,8 @@
 package temp
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	m := r.Method
@@ -20,4 +22,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		del(w, r)
 		return
 	}
+	if m == http.MethodHead {
+		head(w, r)
+		return
+	}
+	if m == http.MethodGet {
+		get(w, r)
+		return
+	}
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
